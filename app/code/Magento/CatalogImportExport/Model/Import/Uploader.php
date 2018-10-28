@@ -175,7 +175,7 @@ class Uploader extends \Magento\MediaStorage\Model\File\Uploader
             } else {
                 $filePath = '';
             }
-            $fileName = preg_replace('/[^a-z0-9\._-]+/i', '', $fileName);
+            $fileName = $this->getFileNameWithExtension($url, $fileName);
             $filePath = $this->_directory->getRelativePath($filePath . $fileName);
             $this->_directory->writeFile(
                 $filePath,
@@ -358,5 +358,42 @@ class Uploader extends \Magento\MediaStorage\Model\File\Uploader
     protected function chmod($file)
     {
         return;
+    }
+
+    /**
+     * @param string $url
+     * @param string $fileName
+     * @return string
+     */
+    private function getFileNameWithExtension($url, $fileName)
+    {
+        $fileName = preg_replace('/[^a-z0-9\._-]+/i', '', $fileName);
+        if (!$this->isFileNameHasExtension($fileName)) {
+            $fileName .= '.' . $this->getExtensionFromHeaders($url);
+        }
+
+        return $fileName;
+    }
+
+    /**
+     * @param string $fileName
+     * @return bool
+     */
+    private function isFileNameHasExtension($fileName)
+    {
+        $fileNameExploded = explode('.', $fileName);
+
+        return in_array(end($fileNameExploded), array_keys($this->_allowedMimeTypes));
+    }
+
+    /**
+     * @param string $url
+     * @return string
+     */
+    private function getExtensionFromHeaders($url)
+    {
+        $contentTypeExploded = explode('/', get_headers($this->httpScheme . $url, 1)['Content-Type']);
+
+        return end($contentTypeExploded);
     }
 }

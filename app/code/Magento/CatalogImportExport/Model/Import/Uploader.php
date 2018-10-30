@@ -6,6 +6,7 @@
 namespace Magento\CatalogImportExport\Model\Import;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Filesystem\DriverPool;
 
 /**
@@ -146,6 +147,8 @@ class Uploader extends \Magento\MediaStorage\Model\File\Uploader
      * @param string $fileName
      * @param bool $renameFileOff
      * @return array
+     * @throws LocalizedException
+     * @throws \Magento\Framework\Exception\FileSystemException
      */
     public function move($fileName, $renameFileOff = false)
     {
@@ -364,6 +367,7 @@ class Uploader extends \Magento\MediaStorage\Model\File\Uploader
      * @param string $url
      * @param string $fileName
      * @return string
+     * @throws \Exception
      */
     private function getFileNameWithExtension($url, $fileName)
     {
@@ -389,10 +393,16 @@ class Uploader extends \Magento\MediaStorage\Model\File\Uploader
     /**
      * @param string $url
      * @return string
+     * @throws \Exception
      */
     private function getExtensionFromHeaders($url)
     {
-        $contentTypeExploded = explode('/', get_headers($this->httpScheme . $url, 1)['Content-Type']);
+        $headers = get_headers($this->httpScheme . $url, 1);
+        if (array_key_exists('Content-Type', $headers)) {
+            $contentTypeExploded = explode('/', $headers['Content-Type']);
+        } else {
+            throw new LocalizedException(__("File doesn't contain extension or Content-type header"));
+        }
 
         return end($contentTypeExploded);
     }
